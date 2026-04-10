@@ -4,7 +4,15 @@ import requests
 import io
 
 # 1. CONFIGURAÇÃO DA PÁGINA
-st.set_page_config(page_title="MatchBrief Pro", page_icon="⚽", layout="wide")
+st.set_page_config(page_title="MatchBrief Pro - Analytics", page_icon="⚽", layout="wide")
+
+# Estilo CSS mantido (conforme solicitado anteriormente)
+st.markdown("""
+    <style>
+    .main { background-color: #f5f7f9; }
+    .stMetric { background-color: #ffffff; padding: 15px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    </style>
+    """, unsafe_allow_html=True)
 
 # DICIONÁRIO DE TRADUÇÃO PARA ESTATÍSTICAS GERAIS (Aba 1)
 def traduzir_metrica(nome_en):
@@ -44,40 +52,72 @@ def obter_json(url):
     except:
         return None
 
-# ORGANIZAÇÃO DE TODAS AS MÉTRICAS DO JOGADOR (Baseado no teu JSON)
+# EXTRAÇÃO COMPLETA DE MÉTRICAS (Baseado no ficheiro JSON fornecido)
 def organizar_stats_jogador(stats_dict):
     mapa = {
+        # --- GERAL ---
         "rating": "Nota",
         "minutesPlayed": "Min",
+        
+        # --- ATAQUE ---
         "goals": "Golos",
         "expectedGoals": "xG",
-        "goalAssist": "Assist.",
-        "expectedAssists": "xA",
-        "keyPass": "P. Chave",
-        "bigChanceCreated": "Grd. Chane. Criada",
         "totalShot": "Remates",
         "shotOnTarget": "No Alvo",
+        "blockedScoringAttempt": "Remates Bloqueados",
+        
+        # --- CRIAÇÃO ---
+        "goalAssist": "Assist.",
+        "expectedAssists": "xA",
+        "keyPass": "Passes Chave",
+        "bigChanceCreated": "Grd. Oport. Criadas",
+        "bigChanceMissed": "Grd. Oport. Falhadas",
+        "accuratePass": "Passes Certos",
+        "totalPass": "Passes Totais",
+        "accurateLongBalls": "Bolas Longas Certas",
+        "totalLongBalls": "Bolas Longas Totais",
+        "accurateCross": "Cruz. Certos",
+        
+        # --- PROGRESSÃO (Tracking Pro) ---
+        "totalBallCarriesDistance": "Dist. Condução (m)",
+        "totalProgression": "Progressão Total",
         "wonContest": "Dribles Ganhos",
-        "accuratePass": "Pass. Certos",
-        "totalPass": "Pass. Totais",
-        "accurateLongBalls": "B. Longas Certas",
+        "dispossessed": "Desarmado",
+        
+        # --- DEFESA ---
         "duelWon": "Duelos Ganhos",
         "duelLost": "Duelos Perdidos",
+        "aerialWon": "Duelos Aéreos Ganhos",
+        "aerialLost": "Duelos Aéreos Perdidos",
+        "ballRecovery": "Recuperações",
         "interceptionWon": "Interceções",
         "wonTackle": "Desarmes Ganhos",
-        "ballRecovery": "Recup. Bola",
+        "totalTackle": "Desarmes Tentados",
         "totalClearance": "Alívios",
+        "clearanceOffLine": "Salvo em Cima da Linha",
+        "outfielderBlock": "Remates Bloqueados (Def)",
+        
+        # --- DISCIPLINA / ERROS ---
+        "fouls": "Faltas Cometidas",
+        "wasFouled": "Faltas Sofridas",
+        "errorLeadToAShot": "Erro p/ Remate",
+        "errorLeadToAGoal": "Erro p/ Golo",
+        "possessionLostCtrl": "Perda de Posse",
+        
+        # --- GUARDA-REDES ---
         "saves": "Defesas",
         "goalsPrevented": "Golos Evitados",
-        "savedShotsFromInsideTheBox": "Def. dentro Área"
+        "savedShotsFromInsideTheBox": "Def. dentro Área",
+        "goodHighClaim": "Saídas Cruzamento"
     }
+    
     resultado = {}
     for chave_api, nome_pt in mapa.items():
         valor = stats_dict.get(chave_api, 0)
         resultado[nome_pt] = round(valor, 2) if isinstance(valor, float) else valor
     return resultado
 
-# --- INTERFACE ---
+# --- INTERFACE PRINCIPAL ---
 st.title("⚽ MatchBrief Advanced Analytics")
 
 with st.sidebar:
@@ -89,12 +129,13 @@ if processar and url_input:
     try:
         match_id = url_input.split(':')[-1] if ':' in url_input else url_input.strip().split('/')[-1]
         
+        # Chamadas de API
         event_data = obter_json(f"https://www.sofascore.com/api/v1/event/{match_id}")
         stats_data = obter_json(f"https://www.sofascore.com/api/v1/event/{match_id}/statistics")
         lineup_data = obter_json(f"https://www.sofascore.com/api/v1/event/{match_id}/lineups")
 
         if not event_data:
-            st.error("Não foi possível aceder aos dados. Tenta novamente em alguns segundos.")
+            st.error("Não foi possível aceder aos dados. Verifique o link ou tente novamente.")
         else:
             casa_nome = event_data['event']['homeTeam']['name']
             fora_nome = event_data['event']['awayTeam']['name']
@@ -103,8 +144,9 @@ if processar and url_input:
 
             st.markdown(f"### {casa_nome} {placar_casa} - {placar_fora} {fora_nome}")
             
-            aba1, aba2 = st.tabs(["📊 Estatísticas do Jogo", "🏃 Performance Individual"])
+            aba1, aba2 = st.tabs(["📊 Estatísticas Coletivas", "🏃 Performance Individual (Pro)"])
 
+            # ABA 1: ESTATÍSTICAS DO JOGO
             with aba1:
                 if stats_data and 'statistics' in stats_data:
                     lista_excel = []
@@ -118,36 +160,44 @@ if processar and url_input:
                             lista_excel.append({"Grupo": grupo['groupName'], **dados_linha})
                         st.table(pd.DataFrame(stats_list))
                     
+                    # Exportação Excel (Aba 1)
                     df_excel = pd.DataFrame(lista_excel)
                     buffer = io.BytesIO()
                     with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
                         df_excel.to_excel(writer, index=False, sheet_name='Stats Jogo')
-                    st.download_button("📥 Baixar Estatísticas do Jogo (Excel)", buffer.getvalue(), f"stats_{casa_nome}_{fora_nome}.xlsx")
+                    st.download_button("📥 Baixar Estatísticas Coletivas (Excel)", buffer.getvalue(), f"stats_{casa_nome}_{fora_nome}.xlsx")
 
+            # ABA 2: PERFORMANCE INDIVIDUAL COMPLETA
             with aba2:
                 col_c, col_f = st.columns(2)
                 for i, lado in enumerate(['home', 'away']):
                     nome_atua = casa_nome if lado == 'home' else fora_nome
                     jogadores = []
+                    
                     for j in lineup_data.get(lado, {}).get('players', []):
                         if j.get('statistics'):
+                            # Base
                             info = {"Jogador": j['player']['name'], "Pos": j['player']['position']}
+                            # Update com o dicionário gigante de métricas
                             info.update(organizar_stats_jogador(j['statistics']))
                             jogadores.append(info)
                     
                     df = pd.DataFrame(jogadores).fillna(0)
                     
-                    # Ordenação de colunas para garantir que as novas aparecem e as importantes vêm primeiro
-                    cols_base = ["Jogador", "Pos", "Nota", "Golos", "xG", "Assist.", "xA", "Min"]
-                    cols_restantes = [c for c in df.columns if c not in cols_base]
-                    df = df[cols_base + cols_restantes]
+                    # Organizar colunas: Primeiro o que o treinador quer ver logo
+                    cols_foco = ["Jogador", "Pos", "Nota", "Golos", "xG", "Assist.", "xA", "Min", "Duelos Ganhos"]
+                    cols_restantes = [c for c in df.columns if c not in cols_foco]
+                    df = df[cols_foco + cols_restantes]
 
                     with (col_c if i == 0 else col_f):
                         st.subheader(f"🛡️ {nome_atua}")
+                        # use_container_width + scroll horizontal automático do Streamlit
                         st.dataframe(df, hide_index=True, use_container_width=True)
+                        
                         csv = df.to_csv(index=False).encode('utf-8-sig')
-                        st.download_button(f"Baixar CSV {nome_atua}", csv, f"detalhe_{nome_atua}.csv")
+                        st.download_button(f"Baixar Detalhe {nome_atua} (CSV)", csv, f"detalhe_{nome_atua}.csv")
 
-            st.success("Análise completa carregada!")
+            st.success("Análise detalhada concluída!")
+
     except Exception as e:
         st.error(f"Erro no processamento: {e}")
