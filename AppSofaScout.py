@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import requests
+import io
 
 # 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(page_title="SofaScout Pro", page_icon="⚽", layout="wide")
@@ -74,20 +75,39 @@ if processar and url_input:
             # ABAS PARA ORGANIZAÇÃO
             aba1, aba2 = st.tabs(["📊 Estatísticas do Jogo", "🏃 Performance Individual"])
 
-            # ABA 1: ESTATÍSTICAS GERAIS (TUA LÓGICA DO SELENIUM ADAPTADA)
+            # ABA 1: ESTATÍSTICAS GERAIS
             with aba1:
                 if stats_data and 'statistics' in stats_data:
-                    # Usamos o período [0] (Jogo Todo)
+                    # Lista para acumular todos os dados para o Excel
+                    lista_excel = []
+                    
                     for grupo in stats_data['statistics'][0]['groups']:
                         st.write(f"#### {grupo['groupName']}")
                         stats_list = []
                         for item in grupo['statisticsItems']:
-                            stats_list.append({
+                            dados_linha = {
                                 "Métrica": item['name'],
                                 casa_nome: item['home'],
                                 fora_nome: item['away']
-                            })
+                            }
+                            stats_list.append(dados_linha)
+                            # Adicionamos também à lista que irá para o Excel (com a info do grupo)
+                            lista_excel.append({"Grupo": grupo['groupName'], **dados_linha})
+                        
                         st.table(pd.DataFrame(stats_list))
+                    
+                    # Botão para baixar as estatísticas da Aba 1 em Excel
+                    df_excel = pd.DataFrame(lista_excel)
+                    buffer = io.BytesIO()
+                    with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+                        df_excel.to_excel(writer, index=False, sheet_name='Stats Jogo')
+                    
+                    st.download_button(
+                        label="📥 Baixar Estatísticas do Jogo (Excel)",
+                        data=buffer.getvalue(),
+                        file_name=f"stats_jogo_{casa_nome}_{fora_nome}.xlsx",
+                        mime="application/vnd.ms-excel"
+                    )
                 else:
                     st.warning("Estatísticas gerais indisponíveis para este jogo.")
 
