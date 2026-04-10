@@ -7,7 +7,7 @@ from datetime import datetime
 # 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(page_title="MatchBrief Pro - Analytics", page_icon="⚽", layout="wide")
 
-# Estilo CSS (Fundo e métricas)
+# Estilo CSS
 st.markdown("""
     <style>
     .main { background-color: #f5f7f9; }
@@ -15,58 +15,20 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# DICIONÁRIO DE TRADUÇÃO PARA ESTATÍSTICAS GERAIS (Aba 1)
+# DICIONÁRIO DE TRADUÇÃO PARA ESTATÍSTICAS GERAIS
 def traduzir_metrica(nome_en):
     traducoes = {
-        "Ball possession": "Posse de bola",
-        "Expected goals": "Golos Esperados (xG)",
-        "Big chances": "Grandes oportunidades",
-        "Total shots": "Total de remates",
-        "Goalkeeper saves": "Defesas do guarda-redes",
-        "Corner kicks": "Cantos",
-        "Fouls": "Faltas",
-        "Passes": "Passes",
-        "Tackles": "Desarmes",
-        "Free kicks": "Livres",
-        "Yellow cards": "Cartões amarelos",
-        "Red cards": "Cartões vermelhos",
-        "Shots on target": "Remates à baliza",
-        "Hit woodwork": "Bolas no poste",
-        "Shots off target": "Remates para fora",
-        "Blocked shots": "Remates bloqueados",
-        "Shots inside box": "Remates dentro da área",
-        "Shots outside box": "Remates fora da área",
-        "Big chances scored": "Grandes oportunidades marcadas",
-        "Big chances missed": "Grandes oportunidades falhadas",
-        "Through balls": "Passes em rutura",
-        "Touches in penalty area": "Toques na área de penalti",
-        "Fouled in final third": "Faltas sofridas no último terço",
-        "Offsides": "Foras de jogo",
-        "Counter attacks": "Contra-ataques",
-        "Accurate passes": "Passes certos",
-        "Throw-ins": "Lançamentos de linha lateral",
-        "Final third entries": "Entradas no último terço",
-        "Final third phase": "Passes no último terço",
-        "Long balls": "Bolas longas",
-        "Crosses": "Cruzamentos",
-        "Duels": "Duelos",
-        "Dispossessed": "Perda de posse",
-        "Ground duels": "Duelos pelo chão",
-        "Aerial duels": "Duelos aéreos",
-        "Dribbles": "Fintas/Dribles",
-        "Tackles won": "Desarmes ganhos (%)",
-        "Total tackles": "Total de desarmes",
-        "Interceptions": "Interceções",
-        "Recoveries": "Recuperações de bola",
-        "Clearances": "Alívios",
-        "Errors lead to a shot": "Erros que levaram a remate",
-        "Errors lead to a goal": "Erros que levaram a golo",
-        "Total saves": "Total de defesas",
-        "Goals prevented": "Golos evitados",
-        "Big saves": "Defesas difíceis",
-        "High claims": "Saídas aos cruzamentos",
-        "Punches": "Socos",
-        "Goal kicks": "Pontapés de baliza"
+        "Ball possession": "Posse de bola", "Expected goals": "Golos Esperados (xG)",
+        "Big chances": "Grandes oportunidades", "Total shots": "Total de remates",
+        "Goalkeeper saves": "Defesas do guarda-redes", "Corner kicks": "Cantos",
+        "Fouls": "Faltas", "Passes": "Passes", "Tackles": "Desarmes",
+        "Free kicks": "Livres", "Yellow cards": "Cartões amarelos", "Red cards": "Cartões vermelhos",
+        "Shots on target": "Remates à baliza", "Hit woodwork": "Bolas no poste",
+        "Shots off target": "Remates para fora", "Blocked shots": "Remates bloqueados",
+        "Shots inside box": "Remates dentro da área", "Shots outside box": "Remates fora da área",
+        "Accurate passes": "Passes certos", "Long balls": "Bolas longas",
+        "Crosses": "Cruzamentos", "Interceptions": "Interceções",
+        "Recoveries": "Recuperações de bola", "Clearances": "Alívios"
     }
     return traducoes.get(nome_en, nome_en)
 
@@ -74,9 +36,7 @@ def obter_json(url):
     session = requests.Session()
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
-        "Accept": "*/*",
-        "Referer": "https://www.sofascore.com/",
-        "Authority": "api.sofascore.com"
+        "Accept": "*/*", "Referer": "https://www.sofascore.com/", "Authority": "api.sofascore.com"
     }
     try:
         session.get("https://www.sofascore.com", headers=headers, timeout=5)
@@ -88,13 +48,10 @@ def obter_json(url):
 def organizar_stats_jogador(stats_dict):
     mapa = {
         "rating": "Nota", "minutesPlayed": "Min", "goals": "Golos",
-        "expectedGoals": "xG", "totalShot": "Remates", "shotOnTarget": "No Alvo",
-        "goalAssist": "Assist.", "expectedAssists": "xA", "keyPass": "Passes Chave",
-        "bigChanceCreated": "Grd. Oport. Criadas", "accuratePass": "Passes Certos",
-        "totalPass": "Passes Totais", "totalBallCarriesDistance": "Dist. Condução (m)",
-        "duelWon": "Duelos Ganhos", "ballRecovery": "Recuperações",
-        "interceptionWon": "Interceções", "wonTackle": "Desarmes Ganhos",
-        "totalClearance": "Alívios", "saves": "Defesas", "goalsPrevented": "Golos Evitados"
+        "expectedGoals": "xG", "goalAssist": "Assist.", "expectedAssists": "xA",
+        "keyPass": "Passes Chave", "accuratePass": "Passes Certos",
+        "totalPass": "Passes Totais", "duelWon": "Duelos Ganhos",
+        "ballRecovery": "Recuperações", "interceptionWon": "Interceções"
     }
     resultado = {}
     for chave_api, nome_pt in mapa.items():
@@ -109,7 +66,7 @@ with st.sidebar:
     try:
         st.image("logo.png", use_container_width=True)
     except:
-        st.warning("⚠️ Ficheiro 'logo.png' não encontrado.")
+        st.warning("⚠️ Logótipo não encontrado.")
     
     st.header("🔎 Pesquisa")
     url_input = st.text_input("Link do Jogo:", placeholder="Cole o URL aqui...")
@@ -120,11 +77,12 @@ if processar and url_input:
         match_id = url_input.split(':')[-1] if ':' in url_input else url_input.strip().split('/')[-1]
         
         event_data = obter_json(f"https://www.sofascore.com/api/v1/event/{match_id}")
+        incidents_data = obter_json(f"https://www.sofascore.com/api/v1/event/{match_id}/incidents")
         stats_data = obter_json(f"https://www.sofascore.com/api/v1/event/{match_id}/statistics")
         lineup_data = obter_json(f"https://www.sofascore.com/api/v1/event/{match_id}/lineups")
 
         if not event_data:
-            st.error("Erro ao aceder aos dados.")
+            st.error("Erro ao carregar dados.")
         else:
             event_info = event_data['event']
             casa_nome = event_info['homeTeam']['name']
@@ -132,7 +90,38 @@ if processar and url_input:
             placar_casa = event_info['homeScore'].get('display', 0)
             placar_fora = event_info['awayScore'].get('display', 0)
 
-            st.markdown(f"### {casa_nome} {placar_casa} - {placar_fora} {fora_nome}")
+            # --- PLACAR CENTRAL ---
+            st.markdown(f"<h2 style='text-align: center;'>{casa_nome} {placar_casa} - {placar_fora} {fora_nome}</h2>", unsafe_allow_html=True)
+            
+            # --- MARCADORES (INCIDENTES DE GOLO) ---
+            if incidents_data and 'incidents' in incidents_data:
+                col_m1, col_m2 = st.columns(2)
+                gols_casa = []
+                gols_fora = []
+                
+                for inc in incidents_data['incidents']:
+                    if inc.get('incidentType') == 'goal':
+                        nome = inc.get('player', {}).get('name', 'N/A')
+                        minuto = inc.get('time', 0)
+                        adicional = inc.get('addedTime')
+                        tempo = f"{minuto}'" if not adicional else f"{minuto}+{adicional}'"
+                        
+                        # Verifica se é golo, autogolo ou penalti
+                        tipo = ""
+                        if inc.get('incidentClass') == 'ownGoal': tipo = " (AG)"
+                        elif inc.get('incidentClass') == 'penalty': tipo = " (P)"
+                        
+                        str_golo = f"⚽ {nome} {tempo}{tipo}"
+                        
+                        if inc.get('isHome'): gols_casa.append(str_golo)
+                        else: gols_fora.append(str_golo)
+                
+                with col_m1:
+                    for g in gols_casa: st.markdown(f"<p style='text-align: right; color: #555; margin: 0;'>{g}</p>", unsafe_allow_html=True)
+                with col_m2:
+                    for g in gols_fora: st.markdown(f"<p style='text-align: left; color: #555; margin: 0;'>{g}</p>", unsafe_allow_html=True)
+
+            st.divider()
             
             aba1, aba2 = st.tabs(["📊 Estatísticas Coletivas", "🏃 Performance Individual (Pro)"])
 
@@ -142,34 +131,21 @@ if processar and url_input:
                 ts = event_info.get('startTimestamp')
                 data_hora = datetime.fromtimestamp(ts).strftime('%d/%m/%Y %H:%M') if ts else "N/A"
                 
-                with col_i1:
-                    st.write("**🕒 Data e Hora**"); st.write(data_hora)
-                with col_i2:
-                    st.write("**🏟️ Estádio**"); st.write(event_info.get('venue', {}).get('name', 'N/A'))
-                with col_i3:
-                    st.write("**⚖️ Árbitro**"); st.write(event_info.get('referee', {}).get('name', 'N/A'))
-                with col_i4:
-                    st.write("**📍 Cidade**"); st.write(event_info.get('venue', {}).get('city', {}).get('name', 'N/A'))
+                with col_i1: st.write("**🕒 Data e Hora**"); st.write(data_hora)
+                with col_i2: st.write("**🏟️ Estádio**"); st.write(event_info.get('venue', {}).get('name', 'N/A'))
+                with col_i3: st.write("**⚖️ Árbitro**"); st.write(event_info.get('referee', {}).get('name', 'N/A'))
+                with col_i4: st.write("**📍 Cidade**"); st.write(event_info.get('venue', {}).get('city', {}).get('name', 'N/A'))
                 
                 st.divider()
 
                 if stats_data and 'statistics' in stats_data:
-                    lista_excel = []
                     for grupo in stats_data['statistics'][0]['groups']:
                         st.write(f"#### {grupo['groupName']}")
                         stats_list = []
                         for item in grupo['statisticsItems']:
                             nome_pt = traduzir_metrica(item['name'])
-                            dados_linha = {"Métrica": nome_pt, casa_nome: item['home'], fora_nome: item['away']}
-                            stats_list.append(dados_linha)
-                            lista_excel.append({"Grupo": grupo['groupName'], **dados_linha})
+                            stats_list.append({"Métrica": nome_pt, casa_nome: item['home'], fora_nome: item['away']})
                         st.table(pd.DataFrame(stats_list))
-                    
-                    df_excel = pd.DataFrame(lista_excel)
-                    buffer = io.BytesIO()
-                    with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
-                        df_excel.to_excel(writer, index=False, sheet_name='Stats Jogo')
-                    st.download_button("📥 Baixar Excel", buffer.getvalue(), f"stats_{casa_nome}_{fora_nome}.xlsx")
 
             with aba2:
                 col_c, col_f = st.columns(2)
@@ -183,15 +159,12 @@ if processar and url_input:
                             jogadores.append(info)
                     
                     df = pd.DataFrame(jogadores).fillna(0)
-                    cols_foco = ["Jogador", "Pos", "Nota", "Golos", "xG", "Assist.", "xA", "Min"]
-                    cols_restantes = [c for c in df.columns if c not in cols_foco]
-                    df = df[cols_foco + cols_restantes]
+                    cols_foco = ["Jogador", "Pos", "Nota", "Golos", "xG", "Assist.", "Min"]
+                    df = df[cols_foco + [c for c in df.columns if c not in cols_foco]]
 
                     with (col_c if i == 0 else col_f):
                         st.subheader(f"🛡️ {nome_atua}")
                         st.dataframe(df, hide_index=True, use_container_width=True)
-                        csv = df.to_csv(index=False).encode('utf-8-sig')
-                        st.download_button(f"Baixar CSV {nome_atua}", csv, f"{nome_atua}.csv")
 
             st.success("Concluído!")
     except Exception as e:
