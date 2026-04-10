@@ -5,113 +5,112 @@ import requests
 # 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(page_title="SofaScout Pro", page_icon="⚽", layout="wide")
 
-st.title("⚽ SofaScout: Estatísticas Avançadas")
-st.markdown("Analise o desempenho individual de cada jogador em segundos.")
+# Estilo CSS para tornar a interface mais bonita
+st.markdown("""
+    <style>
+    .main { background-color: #f5f7f9; }
+    .stMetric { background-color: #ffffff; padding: 15px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    </style>
+    """, unsafe_allow_html=True)
 
-# 2. FUNÇÃO DE LIMPEZA E ORGANIZAÇÃO
-def organizar_stats(stats_dict):
-    # Dicionário de tradução (Técnico -> Português)
-    mapa_nomes = {
-        "goals": "Golos",
-        "expectedG": "xG (Golos Esperados)",
-        "totalShot": "Remates",
-        "shotOnTarget": "No Alvo",
-        "blockedShot": "Remates Bloqueados",
-        "goalAssist": "Assistências",
-        "expectedA": "xA (Assist. Esperadas)",
-        "keyPass": "Passes Decisivos",
-        "accuratePass": "Passes Certos",
-        "totalPass": "Passes Totais",
-        "accurateOppositionHalfPass": "Passes Campo Adv (Certos)",
-        "totalOppositionHalfPass": "Passes Campo Adv (Totais)",
-        "tackle": "Desarmes",
-        "interceptionWon": "Interceções",
-        "groundDuelWon": "Duelos Chão Ganhos",
-        "aerialDuelWon": "Duelos Ar Ganhos",
-        "rating": "Nota"
+def obter_json(url):
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+        "Referer": "https://www.sofascore.com/"
     }
-    
-    dados_limpos = {}
-    for chave, nome_pt in mapa_nomes.items():
-        if chave in stats_dict:
-            valor = stats_dict[chave]
-            # Arredondar valores decimais (xG e xA)
-            dados_limpos[nome_pt] = round(valor, 2) if isinstance(valor, float) else valor
-            
-    return dados_limpos
+    try:
+        response = requests.get(url, headers=headers, timeout=10)
+        return response.json() if response.status_code == 200 else None
+    except:
+        return None
 
-# 3. INTERFACE LATERAL (SIDEBAR)
+def organizar_stats_jogador(stats_dict):
+    mapa = {
+        "goals": "Golos", "expectedG": "xG", "totalShot": "Remates",
+        "shotOnTarget": "No Alvo", "goalAssist": "Assist.", "expectedA": "xA",
+        "keyPass": "Passes Decisivos", "accuratePass": "Passes Certos",
+        "totalPass": "Passes Totais", "rating": "Nota"
+    }
+    return {mapa[k]: (round(v, 2) if isinstance(v, float) else v) for k, v in stats_dict.items() if k in mapa}
+
+# --- INTERFACE ---
+st.title("⚽ SofaScout Advanced Analytics")
+
 with st.sidebar:
-    st.header("Configurações")
-    url_input = st.text_input("Link do Jogo do SofaScore:", placeholder="https://www.sofascore.com/...")
-    st.info("Dica: Cole o link completo da partida.")
-    processar = st.button("Extrair Dados")
+    st.header("🔎 Pesquisa")
+    url_input = st.text_input("Link do Jogo:", placeholder="Cole o URL aqui...")
+    processar = st.button("Analisar Partida")
 
-# 4. LÓGICA DE EXTRAÇÃO
 if processar and url_input:
     try:
-        # Extrair ID de forma robusta
-        if ':' in url_input:
-            match_id = url_input.split(':')[-1]
-        else:
-            match_id = url_input.strip().split('/')[-1]
+        match_id = url_input.split(':')[-1] if ':' in url_input else url_input.strip().split('/')[-1]
+        
+        # 2. CHAMADAS DE API
+        event_data = obter_json(f"https://www.sofascore.com/api/v1/event/{match_id}")
+        stats_data = obter_json(f"https://www.sofascore.com/api/v1/event/{match_id}/statistics")
+        lineup_data = obter_json(f"https://www.sofascore.com/api/v1/event/{match_id}/lineups")
 
-        api_url = f"https://www.sofascore.com/api/v1/event/{match_id}/lineups"
-        
-        # Headers para evitar Erro 403 (Proibido)
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-            "Referer": "https://www.sofascore.com/",
-            "Accept-Language": "pt-PT,pt;q=0.9"
-        }
-        
-        with st.spinner("A consultar a base de dados do SofaScore..."):
-            response = requests.get(api_url, headers=headers, timeout=10)
-        
-        if response.status_code == 200:
-            dados = response.json()
-            
-            col1, col2 = st.columns(2)
-            
-            for i, lado in enumerate(['home', 'away']):
-                if lado in dados:
-                    equipa_nome = dados[lado].get('team', {}).get('name', lado.upper())
-                    jogadores_lista = []
-                    
-                    for j in dados[lado].get('players', []):
-                        if j.get('statistics'):
-                            # Dados base do jogador
-                            info = {
-                                "Jogador": j['player']['name'],
-                                "Pos": j['player']['position']
-                            }
-                            # Adicionar as métricas estatísticas
-                            info.update(organizar_stats(j['statistics']))
-                            jogadores_lista.append(info)
-                    
-                    if jogadores_lista:
-                        df = pd.DataFrame(jogadores_lista).fillna(0)
-                        
-                        # Mostrar na coluna correspondente
-                        with (col1 if i == 0 else col2):
-                            st.subheader(f"🛡️ {equipa_nome}")
-                            # Criar a tabela interativa
-                            st.dataframe(df, use_container_width=True, hide_index=True)
-                            
-                            # Botão de Exportação
-                            csv = df.to_csv(index=False).encode('utf-8-sig')
-                            st.download_button(
-                                label=f"Baixar Excel ({equipa_nome})",
-                                data=csv,
-                                file_name=f"stats_{equipa_nome}.csv",
-                                mime="text/csv"
-                            )
-            st.success("Extração finalizada!")
+        if not event_data:
+            st.error("Não foi possível encontrar o jogo. Verifique o link.")
         else:
-            st.error(f"Erro ao aceder ao site (Código: {response.status_code}). O SofaScore pode estar a proteger os dados.")
+            # NOMES DAS EQUIPAS
+            casa_nome = event_data['event']['homeTeam']['name']
+            fora_nome = event_data['event']['awayTeam']['name']
+            placar_casa = event_data['event']['homeScore'].get('display', 0)
+            placar_fora = event_data['event']['awayScore'].get('display', 0)
+
+            # CABEÇALHO DO JOGO
+            st.markdown(f"### {casa_nome} {placar_casa} - {placar_fora} {fora_nome}")
+            
+            # INFO DO JOGO (Estádio, Árbitro, Torneio)
+            col_info1, col_info2, col_info3 = st.columns(3)
+            with col_info1:
+                st.metric("🏆 Torneio", event_data['event']['tournament']['name'])
+            with col_info2:
+                st.metric("🏟️ Estádio", event_data['event'].get('venue', {}).get('name', 'N/A'))
+            with col_info3:
+                st.metric("⚖️ Árbitro", event_data['event'].get('referee', {}).get('name', 'N/A'))
+
+            # ABAS PARA ORGANIZAÇÃO
+            aba1, aba2 = st.tabs(["📊 Estatísticas do Jogo", "🏃 Performance Individual"])
+
+            # ABA 1: ESTATÍSTICAS GERAIS (TUA LÓGICA DO SELENIUM ADAPTADA)
+            with aba1:
+                if stats_data and 'statistics' in stats_data:
+                    # Usamos o período [0] (Jogo Todo)
+                    for grupo in stats_data['statistics'][0]['groups']:
+                        st.write(f"#### {grupo['groupName']}")
+                        stats_list = []
+                        for item in grupo['statisticsItems']:
+                            stats_list.append({
+                                "Métrica": item['name'],
+                                casa_nome: item['home'],
+                                fora_nome: item['away']
+                            })
+                        st.table(pd.DataFrame(stats_list))
+                else:
+                    st.warning("Estatísticas gerais indisponíveis para este jogo.")
+
+            # ABA 2: JOGADORES
+            with aba2:
+                col_c, col_f = st.columns(2)
+                for i, lado in enumerate(['home', 'away']):
+                    nome_atua = casa_nome if lado == 'home' else fora_nome
+                    jogadores = []
+                    for j in lineup_data.get(lado, {}).get('players', []):
+                        if j.get('statistics'):
+                            info = {"Jogador": j['player']['name'], "Pos": j['player']['position']}
+                            info.update(organizar_stats_jogador(j['statistics']))
+                            jogadores.append(info)
+                    
+                    df = pd.DataFrame(jogadores).fillna(0)
+                    with (col_c if i == 0 else col_f):
+                        st.subheader(f"🛡️ {nome_atua}")
+                        st.dataframe(df, hide_index=True)
+                        csv = df.to_csv(index=False).encode('utf-8-sig')
+                        st.download_button(f"Baixar CSV {nome_atua}", csv, f"{nome_atua}.csv")
+
+            st.success("Dados atualizados!")
 
     except Exception as e:
-        st.error(f"Erro inesperado: {str(e)}")
-
-elif processar and not url_input:
-    st.warning("Por favor, introduza um link válido primeiro.")
+        st.error(f"Erro: {e}")
