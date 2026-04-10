@@ -17,22 +17,68 @@ st.markdown("""
 # DICIONÁRIO DE TRADUÇÃO PARA ESTATÍSTICAS GERAIS (Aba 1)
 def traduzir_metrica(nome_en):
     traducoes = {
-        "Ball possession": "Posse de bola", "Total shots": "Total de remates",
-        "Shots on target": "Remates à baliza", "Shots off target": "Remates para fora",
-        "Blocked shots": "Remates bloqueados", "Corner kicks": "Cantos",
-        "Offsides": "Foras de jogo", "Fouls": "Faltas",
-        "Yellow cards": "Cartões amarelos", "Red cards": "Cartões vermelhos",
-        "Free kicks": "Livres", "Goal kicks": "Pontapés de baliza",
-        "Big chances": "Grandes oportunidades", "Big chances missed": "Grandes oportunidades falhadas",
-        "Hit woodwork": "Bolas no poste", "Counter attacks": "Contra-ataques",
-        "Shots inside box": "Remates dentro da área", "Shots outside box": "Remates fora da área",
-        "Goalkeeper saves": "Defesas do guarda-redes", "Passes": "Passes",
-        "Accurate passes": "Passes certos", "Long balls": "Bolas longas",
-        "Crosses": "Cruzamentos", "Dribbles": "Fintas/Dribles",
-        "Possession lost": "Perda de posse", "Duels won": "Duelos ganhos",
-        "Aerials won": "Duelos aéreos ganhos", "Tackles": "Desarmes",
-        "Interceptions": "Interceções", "Clearances": "Alívios",
-        "Expected goals": "Golos Esperados (xG)", "Big chances scored": "Grandes oportunidades marcadas",
+        # --- RESUMO ---
+        "Ball possession": "Posse de bola",
+        "Expected goals": "Golos Esperados (xG)",
+        "Big chances": "Grandes oportunidades",
+        "Total shots": "Total de remates",
+        "Goalkeeper saves": "Defesas do guarda-redes",
+        "Corner kicks": "Cantos",
+        "Fouls": "Faltas",
+        "Passes": "Passes",
+        "Tackles": "Desarmes",
+        "Free kicks": "Livres",
+        "Yellow cards": "Cartões amarelos",
+        "Red cards": "Cartões vermelhos",
+        
+        # --- REMATES (SHOTS) ---
+        "Shots on target": "Remates à baliza",
+        "Hit woodwork": "Bolas no poste",
+        "Shots off target": "Remates para fora",
+        "Blocked shots": "Remates bloqueados",
+        "Shots inside box": "Remates dentro da área",
+        "Shots outside box": "Remates fora da área",
+        
+        # --- ATAQUE (ATTACK) ---
+        "Big chances scored": "Grandes oportunidades marcadas",
+        "Big chances missed": "Grandes oportunidades falhadas",
+        "Through balls": "Passes em rutura",
+        "Touches in penalty area": "Toques na área de penalti",
+        "Fouled in final third": "Faltas sofridas no último terço",
+        "Offsides": "Foras de jogo",
+        "Counter attacks": "Contra-ataques",
+        
+        # --- PASSES ---
+        "Accurate passes": "Passes certos",
+        "Throw-ins": "Lançamentos de linha lateral",
+        "Final third entries": "Entradas no último terço",
+        "Final third phase": "Passes no último terço",
+        "Long balls": "Bolas longas",
+        "Crosses": "Cruzamentos",
+        
+        # --- DUELOS (DUELS) ---
+        "Duels": "Duelos",
+        "Dispossessed": "Perda de posse",
+        "Ground duels": "Duelos pelo chão",
+        "Aerial duels": "Duelos aéreos",
+        "Dribbles": "Fintas/Dribles",
+        
+        # --- DEFESA (DEFENDING) ---
+        "Tackles won": "Desarmes ganhos (%)",
+        "Total tackles": "Total de desarmes",
+        "Interceptions": "Interceções",
+        "Recoveries": "Recuperações de bola",
+        "Clearances": "Alívios",
+        "Errors lead to a shot": "Erros que levaram a remate",
+        "Errors lead to a goal": "Erros que levaram a golo",
+        
+        # --- GUARDA-REDES (GOALKEEPING) ---
+        "Total saves": "Total de defesas",
+        "Goals prevented": "Golos evitados",
+        "Big saves": "Defesas difíceis",
+        "High claims": "Saídas aos cruzamentos",
+        "Punches": "Socos",
+        "Goal kicks": "Pontapés de baliza"
     }
     return traducoes.get(nome_en, nome_en)
 
