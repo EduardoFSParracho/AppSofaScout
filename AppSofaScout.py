@@ -164,7 +164,7 @@ def organizar_stats_jogador(stats_dict):
     return resultado
 
 # --- INTERFACE PRINCIPAL ---
-st.title("⚽ MatchBrief Advanced Analytics")
+st.title("⚽ MatchBrief ")
 
 with st.sidebar:
     st.header("🔎 Pesquisa")
