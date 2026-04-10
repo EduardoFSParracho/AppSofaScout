@@ -32,7 +32,7 @@ def traduzir_metrica(nome_en):
         "Possession lost": "Perda de posse", "Duels won": "Duelos ganhos",
         "Aerials won": "Duelos aéreos ganhos", "Tackles": "Desarmes",
         "Interceptions": "Interceções", "Clearances": "Alívios",
-        "Expected goals": "Golos Esperados (xG)"
+        "Expected goals": "Golos Esperados (xG)", "Big chances scored": "Grandes oportunidades marcadas",
     }
     return traducoes.get(nome_en, nome_en)
 
