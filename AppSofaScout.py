@@ -7,7 +7,7 @@ from datetime import datetime
 # 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(page_title="MatchBrief Pro - Analytics", page_icon="⚽", layout="wide")
 
-# Estilo CSS
+# Estilo CSS para melhorar a visualização das métricas
 st.markdown("""
     <style>
     .main { background-color: #f5f7f9; }
@@ -15,7 +15,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# DICIONÁRIO DE TRADUÇÃO PARA ESTATÍSTICAS GERAIS
+# DICIONÁRIO DE TRADUÇÃO PARA ESTATÍSTICAS GERAIS (Aba 1)
 def traduzir_metrica(nome_en):
     traducoes = {
         "Ball possession": "Posse de bola", "Expected goals": "Golos Esperados (xG)",
@@ -28,7 +28,14 @@ def traduzir_metrica(nome_en):
         "Shots inside box": "Remates dentro da área", "Shots outside box": "Remates fora da área",
         "Accurate passes": "Passes certos", "Long balls": "Bolas longas",
         "Crosses": "Cruzamentos", "Interceptions": "Interceções",
-        "Recoveries": "Recuperações de bola", "Clearances": "Alívios"
+        "Recoveries": "Recuperações de bola", "Clearances": "Alívios",
+        "Big chances scored": "Grandes oportunidades marcadas",
+        "Big chances missed": "Grandes oportunidades falhadas",
+        "Through balls": "Passes em rutura", "Touches in penalty area": "Toques na área de penalti",
+        "Fouled in final third": "Faltas sofridas no último terço", "Offsides": "Foras de jogo",
+        "Ground duels": "Duelos pelo chão", "Aerial duels": "Duelos aéreos",
+        "Dribbles": "Fintas/Dribles", "Errors lead to a shot": "Erros que levaram a remate",
+        "Errors lead to a goal": "Erros que levaram a golo"
     }
     return traducoes.get(nome_en, nome_en)
 
@@ -51,7 +58,8 @@ def organizar_stats_jogador(stats_dict):
         "expectedGoals": "xG", "goalAssist": "Assist.", "expectedAssists": "xA",
         "keyPass": "Passes Chave", "accuratePass": "Passes Certos",
         "totalPass": "Passes Totais", "duelWon": "Duelos Ganhos",
-        "ballRecovery": "Recuperações", "interceptionWon": "Interceções"
+        "ballRecovery": "Recuperações", "interceptionWon": "Interceções",
+        "totalBallCarriesDistance": "Dist. Condução (m)", "wonTackle": "Desarmes Ganhos"
     }
     resultado = {}
     for chave_api, nome_pt in mapa.items():
@@ -66,7 +74,7 @@ with st.sidebar:
     try:
         st.image("logo.png", use_container_width=True)
     except:
-        st.warning("⚠️ Logótipo não encontrado.")
+        st.warning("⚠️ Logótipo 'logo.png' não encontrado.")
     
     st.header("🔎 Pesquisa")
     url_input = st.text_input("Link do Jogo:", placeholder="Cole o URL aqui...")
@@ -82,7 +90,7 @@ if processar and url_input:
         lineup_data = obter_json(f"https://www.sofascore.com/api/v1/event/{match_id}/lineups")
 
         if not event_data:
-            st.error("Erro ao carregar dados.")
+            st.error("Erro ao carregar dados. Verifica o link.")
         else:
             event_info = event_data['event']
             casa_nome = event_info['homeTeam']['name']
@@ -93,36 +101,24 @@ if processar and url_input:
             # --- PLACAR CENTRAL ---
             st.markdown(f"<h2 style='text-align: center;'>{casa_nome} {placar_casa} - {placar_fora} {fora_nome}</h2>", unsafe_allow_html=True)
             
-            # --- MARCADORES (INCIDENTES DE GOLO) ---
+            # --- MARCADORES ---
             if incidents_data and 'incidents' in incidents_data:
                 col_m1, col_m2 = st.columns(2)
-                gols_casa = []
-                gols_fora = []
-                
+                gols_casa, gols_fora = [], []
                 for inc in incidents_data['incidents']:
                     if inc.get('incidentType') == 'goal':
                         nome = inc.get('player', {}).get('name', 'N/A')
                         minuto = inc.get('time', 0)
-                        adicional = inc.get('addedTime')
-                        tempo = f"{minuto}'" if not adicional else f"{minuto}+{adicional}'"
-                        
-                        # Verifica se é golo, autogolo ou penalti
-                        tipo = ""
-                        if inc.get('incidentClass') == 'ownGoal': tipo = " (AG)"
-                        elif inc.get('incidentClass') == 'penalty': tipo = " (P)"
-                        
-                        str_golo = f"⚽ {nome} {tempo}{tipo}"
-                        
+                        tipo = " (AG)" if inc.get('incidentClass') == 'ownGoal' else (" (P)" if inc.get('incidentClass') == 'penalty' else "")
+                        str_golo = f"⚽ {nome} {minuto}'{tipo}"
                         if inc.get('isHome'): gols_casa.append(str_golo)
                         else: gols_fora.append(str_golo)
-                
                 with col_m1:
                     for g in gols_casa: st.markdown(f"<p style='text-align: right; color: #555; margin: 0;'>{g}</p>", unsafe_allow_html=True)
                 with col_m2:
                     for g in gols_fora: st.markdown(f"<p style='text-align: left; color: #555; margin: 0;'>{g}</p>", unsafe_allow_html=True)
 
             st.divider()
-            
             aba1, aba2 = st.tabs(["📊 Estatísticas Coletivas", "🏃 Performance Individual (Pro)"])
 
             with aba1:
@@ -130,7 +126,6 @@ if processar and url_input:
                 col_i1, col_i2, col_i3, col_i4 = st.columns(4)
                 ts = event_info.get('startTimestamp')
                 data_hora = datetime.fromtimestamp(ts).strftime('%d/%m/%Y %H:%M') if ts else "N/A"
-                
                 with col_i1: st.write("**🕒 Data e Hora**"); st.write(data_hora)
                 with col_i2: st.write("**🏟️ Estádio**"); st.write(event_info.get('venue', {}).get('name', 'N/A'))
                 with col_i3: st.write("**⚖️ Árbitro**"); st.write(event_info.get('referee', {}).get('name', 'N/A'))
@@ -139,13 +134,23 @@ if processar and url_input:
                 st.divider()
 
                 if stats_data and 'statistics' in stats_data:
+                    lista_excel = []
                     for grupo in stats_data['statistics'][0]['groups']:
                         st.write(f"#### {grupo['groupName']}")
                         stats_list = []
                         for item in grupo['statisticsItems']:
                             nome_pt = traduzir_metrica(item['name'])
-                            stats_list.append({"Métrica": nome_pt, casa_nome: item['home'], fora_nome: item['away']})
+                            dados = {"Métrica": nome_pt, casa_nome: item['home'], fora_nome: item['away']}
+                            stats_list.append(dados)
+                            lista_excel.append({"Grupo": grupo['groupName'], **dados})
                         st.table(pd.DataFrame(stats_list))
+                    
+                    # Botão Excel Aba 1
+                    df_excel = pd.DataFrame(lista_excel)
+                    buffer = io.BytesIO()
+                    with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+                        df_excel.to_excel(writer, index=False, sheet_name='Stats Jogo')
+                    st.download_button("📥 Baixar Estatísticas Coletivas (Excel)", buffer.getvalue(), f"stats_{casa_nome}_vs_{fora_nome}.xlsx")
 
             with aba2:
                 col_c, col_f = st.columns(2)
@@ -158,14 +163,18 @@ if processar and url_input:
                             info.update(organizar_stats_jogador(j['statistics']))
                             jogadores.append(info)
                     
-                    df = pd.DataFrame(jogadores).fillna(0)
+                    df_jogadores = pd.DataFrame(jogadores).fillna(0)
                     cols_foco = ["Jogador", "Pos", "Nota", "Golos", "xG", "Assist.", "Min"]
-                    df = df[cols_foco + [c for c in df.columns if c not in cols_foco]]
+                    df_jogadores = df_jogadores[cols_foco + [c for c in df_jogadores.columns if c not in cols_foco]]
 
                     with (col_c if i == 0 else col_f):
                         st.subheader(f"🛡️ {nome_atua}")
-                        st.dataframe(df, hide_index=True, use_container_width=True)
+                        st.dataframe(df_jogadores, hide_index=True, use_container_width=True)
+                        
+                        # Botão CSV Aba 2
+                        csv = df_jogadores.to_csv(index=False).encode('utf-8-sig')
+                        st.download_button(f"📥 Baixar CSV {nome_atua}", csv, f"detalhe_{nome_atua}.csv")
 
-            st.success("Concluído!")
+            st.success("Dados carregados com sucesso!")
     except Exception as e:
-        st.error(f"Erro: {e}")
+        st.error(f"Erro no processamento: {e}")
