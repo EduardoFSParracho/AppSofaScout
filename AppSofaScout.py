@@ -4,9 +4,9 @@ import requests
 import io
 
 # 1. CONFIGURAÇÃO DA PÁGINA
-st.set_page_config(page_title="SofaScout Pro", page_icon="⚽", layout="wide")
+st.set_page_config(page_title="MatchBrief Pro", page_icon="⚽", layout="wide")
 
-# Estilo CSS
+# Estilo CSS (Mantido conforme solicitado)
 st.markdown("""
     <style>
     .main { background-color: #f5f7f9; }
@@ -14,42 +14,26 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# DICIONÁRIO DE TRADUÇÃO PARA ESTATÍSTICAS GERAIS
 def traduzir_metrica(nome_en):
     traducoes = {
-        "Ball possession": "Posse de bola",
-        "Total shots": "Total de remates",
-        "Shots on target": "Remates à baliza",
-        "Shots off target": "Remates para fora",
-        "Blocked shots": "Remates bloqueados",
-        "Corner kicks": "Cantos",
-        "Offsides": "Foras de jogo",
-        "Fouls": "Faltas",
-        "Yellow cards": "Cartões amarelos",
-        "Red cards": "Cartões vermelhos",
-        "Free kicks": "Livres",
-        "Goal kicks": "Pontapés de baliza",
-        "Big chances": "Grandes oportunidades",
-        "Big chances missed": "Grandes oportunidades falhadas",
-        "Hit woodwork": "Bolas no poste",
-        "Counter attacks": "Contra-ataques",
-        "Shots inside box": "Remates dentro da área",
-        "Shots outside box": "Remates fora da área",
-        "Goalkeeper saves": "Defesas do guarda-redes",
-        "Passes": "Passes",
-        "Accurate passes": "Passes certos",
-        "Long balls": "Bolas longas",
-        "Crosses": "Cruzamentos",
-        "Dribbles": "Fintas/Dribles",
-        "Possession lost": "Perda de posse",
-        "Duels won": "Duelos ganhos",
-        "Aerials won": "Duelos aéreos ganhos",
-        "Tackles": "Desarmes",
-        "Interceptions": "Interceções",
-        "Clearances": "Alívios",
+        "Ball possession": "Posse de bola", "Total shots": "Total de remates",
+        "Shots on target": "Remates à baliza", "Shots off target": "Remates para fora",
+        "Blocked shots": "Remates bloqueados", "Corner kicks": "Cantos",
+        "Offsides": "Foras de jogo", "Fouls": "Faltas",
+        "Yellow cards": "Cartões amarelos", "Red cards": "Cartões vermelhos",
+        "Free kicks": "Livres", "Goal kicks": "Pontapés de baliza",
+        "Big chances": "Grandes oportunidades", "Big chances missed": "Grandes oportunidades falhadas",
+        "Hit woodwork": "Bolas no poste", "Counter attacks": "Contra-ataques",
+        "Shots inside box": "Remates dentro da área", "Shots outside box": "Remates fora da área",
+        "Goalkeeper saves": "Defesas do guarda-redes", "Passes": "Passes",
+        "Accurate passes": "Passes certos", "Long balls": "Bolas longas",
+        "Crosses": "Cruzamentos", "Dribbles": "Fintas/Dribles",
+        "Possession lost": "Perda de posse", "Duels won": "Duelos ganhos",
+        "Aerials won": "Duelos aéreos ganhos", "Tackles": "Desarmes",
+        "Interceptions": "Interceções", "Clearances": "Alívios",
         "Expected goals": "Golos Esperados (xG)"
     }
-    return traducoes.get(nome_en, nome_en) # Se não encontrar, mantém o original
+    return traducoes.get(nome_en, nome_en)
 
 def obter_json(url):
     headers = {
@@ -63,16 +47,48 @@ def obter_json(url):
         return None
 
 def organizar_stats_jogador(stats_dict):
+    # Mapeamento estendido com base no ficheiro JSON das Lineups
     mapa = {
-        "goals": "Golos", "expectedG": "xG", "totalShot": "Remates",
-        "shotOnTarget": "No Alvo", "goalAssist": "Assist.", "expectedA": "xA",
-        "keyPass": "Passes Decisivos", "accuratePass": "Passes Certos",
-        "totalPass": "Passes Totais", "rating": "Nota"
+        # Geral
+        "rating": "Nota",
+        "minutesPlayed": "Min",
+        # Ataque & Criação
+        "goals": "Golos",
+        "expectedGoals": "xG",
+        "goalAssist": "Assist.",
+        "expectedAssists": "xA",
+        "keyPass": "P. Chave",
+        "bigChanceCreated": "Grd. Chane. Criada",
+        "totalShot": "Remates",
+        "shotOnTarget": "No Alvo",
+        "wonContest": "Dribles Ganhos",
+        # Passe
+        "accuratePass": "Pass. Certos",
+        "totalPass": "Pass. Totais",
+        "accurateLongBalls": "B. Longas Certas",
+        # Defesa
+        "duelWon": "Duelos Ganhos",
+        "duelLost": "Duelos Perdidos",
+        "interceptionWon": "Interceções",
+        "wonTackle": "Desarmes Ganhos",
+        "ballRecovery": "Recup. Bola",
+        "totalClearance": "Alívios",
+        "errorLeadToAGoal": "Erros p/ Golo",
+        # Guarda-redes
+        "saves": "Defesas",
+        "goalsPrevented": "Golos Evitados",
+        "savedShotsFromInsideTheBox": "Def. dentro Área"
     }
-    return {mapa[k]: (round(v, 2) if isinstance(v, float) else v) for k, v in stats_dict.items() if k in mapa}
+    
+    # Extração inteligente: Se o valor for float, arredonda. Se não existir, coloca 0.
+    resultado = {}
+    for chave_api, nome_pt in mapa.items():
+        valor = stats_dict.get(chave_api, 0)
+        resultado[nome_pt] = round(valor, 2) if isinstance(valor, float) else valor
+    return resultado
 
 # --- INTERFACE ---
-st.title("⚽ SofaScout Advanced Analytics")
+st.title("⚽ MatchBrief Advanced Analytics")
 
 with st.sidebar:
     st.header("🔎 Pesquisa")
@@ -114,7 +130,7 @@ if processar and url_input:
                         st.write(f"#### {grupo['groupName']}")
                         stats_list = []
                         for item in grupo['statisticsItems']:
-                            nome_pt = traduzir_metrica(item['name']) # AQUI É FEITA A TRADUÇÃO
+                            nome_pt = traduzir_metrica(item['name'])
                             dados_linha = {
                                 "Métrica": nome_pt,
                                 casa_nome: item['home'],
@@ -146,13 +162,18 @@ if processar and url_input:
                     jogadores = []
                     for j in lineup_data.get(lado, {}).get('players', []):
                         if j.get('statistics'):
-                            info = {"Jogador": j['player']['name'], "Pos": j['player']['position']}
+                            # Combina info básica com as novas métricas detalhadas
+                            info = {
+                                "Jogador": j['player']['name'], 
+                                "Pos": j['player']['position']
+                            }
                             info.update(organizar_stats_jogador(j['statistics']))
                             jogadores.append(info)
                     
                     df = pd.DataFrame(jogadores).fillna(0)
                     with (col_c if i == 0 else col_f):
                         st.subheader(f"🛡️ {nome_atua}")
+                        # st.dataframe permite ordenar por nota ou xG facilmente
                         st.dataframe(df, hide_index=True)
                         csv = df.to_csv(index=False).encode('utf-8-sig')
                         st.download_button(f"Baixar CSV {nome_atua}", csv, f"{nome_atua}.csv")
