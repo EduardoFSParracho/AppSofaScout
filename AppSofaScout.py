@@ -10,8 +10,6 @@ st.markdown("""
     <style>
     .main { background-color: #f5f7f9; }
     .stMetric { background-color: #ffffff; padding: 15px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-    /* Alinhamento central para o scoreboard */
-    .scoreboard { display: flex; align-items: center; justify-content: center; gap: 20px; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -55,45 +53,31 @@ if processar and url_input:
         if not event_data:
             st.error("Não foi possível encontrar o jogo. Verifique o link.")
         else:
-            # DADOS DAS EQUIPAS E PLACAR
-            casa = event_data['event']['homeTeam']
-            fora = event_data['event']['awayTeam']
-            casa_nome, casa_id = casa['name'], casa['id']
-            fora_nome, fora_id = fora['name'], fora['id']
+            # NOMES DAS EQUIPAS
+            casa_nome = event_data['event']['homeTeam']['name']
+            fora_nome = event_data['event']['awayTeam']['name']
             placar_casa = event_data['event']['homeScore'].get('display', 0)
             placar_fora = event_data['event']['awayScore'].get('display', 0)
 
-            # --- SCOREBOARD COM IMAGENS ---
-            st.markdown("---")
-            col_l1, col_score, col_l2 = st.columns([1, 2, 1])
+            # CABEÇALHO DO JOGO
+            st.markdown(f"### {casa_nome} {placar_casa} - {placar_fora} {fora_nome}")
             
-            with col_l1:
-                st.image(f"https://sofascore.com/api/v1/team/{casa_id}/image", width=80)
-                st.subheader(casa_nome)
-                
-            with col_score:
-                st.markdown(f"<h1 style='text-align: center; font-size: 60px;'>{placar_casa} - {placar_fora}</h1>", unsafe_allow_html=True)
-                st.markdown(f"<p style='text-align: center;'>{event_data['event']['tournament']['name']}</p>", unsafe_allow_html=True)
-                
-            with col_l2:
-                # Alinhamento manual para o logo da direita
-                st.image(f"https://sofascore.com/api/v1/team/{fora_id}/image", width=80)
-                st.subheader(fora_nome)
-            st.markdown("---")
-            
-            # INFO DO JOGO (Estádio, Árbitro)
-            col_info1, col_info2 = st.columns(2)
+            # INFO DO JOGO (Estádio, Árbitro, Torneio)
+            col_info1, col_info2, col_info3 = st.columns(3)
             with col_info1:
-                st.metric("🏟️ Estádio", event_data['event'].get('venue', {}).get('name', 'N/A'))
+                st.metric("🏆 Torneio", event_data['event']['tournament']['name'])
             with col_info2:
+                st.metric("🏟️ Estádio", event_data['event'].get('venue', {}).get('name', 'N/A'))
+            with col_info3:
                 st.metric("⚖️ Árbitro", event_data['event'].get('referee', {}).get('name', 'N/A'))
 
             # ABAS PARA ORGANIZAÇÃO
             aba1, aba2 = st.tabs(["📊 Estatísticas do Jogo", "🏃 Performance Individual"])
 
-            # ABA 1: ESTATÍSTICAS GERAIS
+            # ABA 1: ESTATÍSTICAS GERAIS (TUA LÓGICA DO SELENIUM ADAPTADA)
             with aba1:
                 if stats_data and 'statistics' in stats_data:
+                    # Usamos o período [0] (Jogo Todo)
                     for grupo in stats_data['statistics'][0]['groups']:
                         st.write(f"#### {grupo['groupName']}")
                         stats_list = []
@@ -105,15 +89,13 @@ if processar and url_input:
                             })
                         st.table(pd.DataFrame(stats_list))
                 else:
-                    st.warning("Estatísticas gerais indisponíveis.")
+                    st.warning("Estatísticas gerais indisponíveis para este jogo.")
 
-            # ABA 2: JOGADORES (Com nota de destaque)
+            # ABA 2: JOGADORES
             with aba2:
                 col_c, col_f = st.columns(2)
                 for i, lado in enumerate(['home', 'away']):
                     nome_atua = casa_nome if lado == 'home' else fora_nome
-                    equipa_id = casa_id if lado == 'home' else fora_id
-                    
                     jogadores = []
                     for j in lineup_data.get(lado, {}).get('players', []):
                         if j.get('statistics'):
@@ -122,16 +104,13 @@ if processar and url_input:
                             jogadores.append(info)
                     
                     df = pd.DataFrame(jogadores).fillna(0)
-                    
                     with (col_c if i == 0 else col_f):
-                        st.image(f"https://sofascore.com/api/v1/team/{equipa_id}/image", width=30)
-                        st.subheader(f"{nome_atua}")
-                        # Aplicar uma cor suave para destacar as notas altas
-                        st.dataframe(df.style.background_gradient(cmap='Greens', subset=['Nota']), use_container_width=True, hide_index=True)
+                        st.subheader(f"🛡️ {nome_atua}")
+                        st.dataframe(df, hide_index=True)
                         csv = df.to_csv(index=False).encode('utf-8-sig')
-                        st.download_button(f"Exportar {nome_atua}", csv, f"{nome_atua}.csv")
+                        st.download_button(f"Baixar CSV {nome_atua}", csv, f"{nome_atua}.csv")
 
-            st.success("Dados atualizados com sucesso!")
+            st.success("Dados atualizados!")
 
     except Exception as e:
-        st.error(f"Erro ao processar: {e}")
+        st.error(f"Erro: {e}")
